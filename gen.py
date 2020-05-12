@@ -1,8 +1,9 @@
 import os
 import sys
+from ctypes.util import find_library
+from clang.cindex import CursorKind, Index, Config
 
-from clang.cindex import CursorKind, Index
-
+Config.set_library_file(find_library('clang'))
 
 class Rust:
     reserved_keywords = ()
@@ -123,12 +124,39 @@ class CSharp:
     def end_enum(self):
         print("}\n")
 
+class Nim:
+    reserved_keywords = ()
+    bitflags = []
+
+    max_value_name = ""
+    max_value = 0
+    def file_header(self):
+        print("# THIS FILE IS AUTO-GENERATED USING zydis-bindgen!\n")
+
+    def start_enum(self, name, full_name, brief_comment):
+        print(f'type {name}* = enum ## {brief_comment}')
+
+    def enum_member(self, name, full_name, val, brief_comment):
+        if name == "REQUIRED_BITS":
+            return
+        if full_name.endswith("_MAX_VALUE"):
+            max_value_name = full_name
+            max_value = val
+            print(f"const {full_name}* = {val}")
+            return
+        if brief_comment:
+            print(f"    ## {brief_comment}")
+        print(f"    {full_name} = {val}")
+
+    def end_enum(self):
+        print("\n")
 
 MODES = {
     "rust": Rust(),
     "py": Py(),
     "pxd": Pxd(),
     "csharp": CSharp(),
+    "nim": Nim()
 }
 
 
